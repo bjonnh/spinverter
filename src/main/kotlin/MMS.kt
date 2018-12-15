@@ -1,5 +1,7 @@
 package net.nprod.spinverter.MMS
 
+import java.io.FileInputStream
+
 
 data class VField(
     // Looks like a header for the file
@@ -204,8 +206,8 @@ fun atomFromString(line: String): AtomField {
         charge_lock = splitLine[11].toInt(),
         position_lock = splitLine[12].toInt(),
         x = splitLine[13].toFloat(),
-        y = splitLine[1].toFloat(),
-        z = splitLine[1].toFloat()
+        y = splitLine[14].toFloat(),
+        z = splitLine[15].toFloat()
     )
 }
 
@@ -242,3 +244,19 @@ data class MMSFile(
     var spinGroups: MutableList<SpinGroupField> = mutableListOf(), // handled
     var couplingGroups: MutableList<CouplingGroupField> = mutableListOf() // handled
 )
+
+
+fun parseMMS(inputStream: FileInputStream, mmsFile: MMSFile) {
+    inputStream.bufferedReader().useLines { lines ->
+        lines.forEach {
+            when {
+                it.startsWith('V') -> mmsFile.vField = vFieldFromString(it)
+                it.startsWith("I A NAME") -> mmsFile.atomNames.add(atomNameFromString(it))
+                it.startsWith("N G") -> mmsFile.spinGroups.add(spinGroupFromString(it))
+                it.startsWith("N C") -> mmsFile.couplingGroups.add(couplingGroupFromString(it))
+                it.startsWith("A") -> mmsFile.atoms.add(atomFromString(it))
+                it.startsWith("B") -> mmsFile.bonds.add(bondFromString(it))
+            }
+        }
+    }
+}
