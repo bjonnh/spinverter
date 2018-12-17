@@ -78,23 +78,24 @@ fun atomNameFromString(line: String): AtomNameField{
 
 data class MagneticGroup(
     val atom_number: Int,
-    val predicted_shift: Float?,
-    val predicted_range: Float?
+    val predictedShift: Float?,
+    val predictedRange: Float?
 )
 
 data class SpinGroupField(
     val name: String,
-    val observed_shift: Float?,
-    val predicted_shift: Float?,
-    val line_width: Float,
+    val observedShift: Float?,
+    val predictedShift: Float?,
+    val lineWidth: Float,
     val decoupling: Int,
     val suppressed: Int,
     val reliability: Float,
     val range: Float,
-    val range_lock: Int,
-    val group_weight: Int,
-    val num_magnetic_groups: Int,
-    val magnetic_groups: List<List<MagneticGroup>>
+    val rangeLock: Int,
+    val groupWeight: Int,
+    val numMagneticGroups: Int,
+    val magneticGroups: List<List<MagneticGroup>>,
+    val index: Int
 )
 
 fun chemicalShiftCleaner(str: String): Float? {
@@ -125,30 +126,31 @@ fun parseMagneticGroups(residualLine: String): List<List<MagneticGroup>> {
     }
 }
 
-fun spinGroupFromString(line: String): SpinGroupField {
+fun spinGroupFromString(line: String, index: Int): SpinGroupField {
     val splitLine = line.split(" ")
     return SpinGroupField(
         name = splitLine[2].removeSurrounding("|"),
-        observed_shift = chemicalShiftCleaner(splitLine[3]),
-        predicted_shift = chemicalShiftCleaner(splitLine[4]),
-        line_width = splitLine[5].toFloat(),
+        observedShift = chemicalShiftCleaner(splitLine[3]),
+        predictedShift = chemicalShiftCleaner(splitLine[4]),
+        lineWidth = splitLine[5].toFloat(),
         decoupling = splitLine[6].toInt(),
         suppressed = splitLine[7].toInt(),
         reliability = splitLine[8].toFloat(),
         range = splitLine[9].toFloat(),
-        range_lock = splitLine[10].toInt(),
-        group_weight = splitLine[11].toInt(),
-        num_magnetic_groups = splitLine[12].toInt(),
-        magnetic_groups = parseMagneticGroups(splitLine.subList(12, splitLine.size).joinToString(" "))
+        rangeLock = splitLine[10].toInt(),
+        groupWeight = splitLine[11].toInt(),
+        numMagneticGroups = splitLine[12].toInt(),
+        magneticGroups = parseMagneticGroups(splitLine.subList(12, splitLine.size).joinToString(" ")),
+        index = index
     )
 }
 
 data class CouplingGroupField(
     val type: Int,
-    val mg1_parent: Int,
     val mg1: Int,
-    val mg2_parent: Int,
+    val mg1_index: Int,
     val mg2: Int,
+    val mg2_index: Int,
     val group_id: Int,
     val bond_length: Int,
     val observed_coupling: Float,
@@ -160,10 +162,10 @@ fun couplingGroupFromString(line: String): CouplingGroupField {
     val splitLine = line.split(" ")
     return CouplingGroupField(
         type = splitLine[2].toInt(),
-        mg1_parent = splitLine[3].toInt(),
-        mg1 = splitLine[4].toInt(),
-        mg2_parent = splitLine[5].toInt(),
-        mg2 = splitLine[6].toInt(),
+        mg1 = splitLine[3].toInt(),
+        mg1_index = splitLine[4].toInt(),
+        mg2 = splitLine[5].toInt(),
+        mg2_index = splitLine[6].toInt(),
         group_id = splitLine[7].toInt(),
         bond_length = splitLine[8].toInt(),
         observed_coupling = splitLine[9].toFloat(),
@@ -252,7 +254,7 @@ fun parseMMS(inputStream: FileInputStream, mmsFile: MMSFile) {
             when {
                 it.startsWith('V') -> mmsFile.vField = vFieldFromString(it)
                 it.startsWith("I A NAME") -> mmsFile.atomNames.add(atomNameFromString(it))
-                it.startsWith("N G") -> mmsFile.spinGroups.add(spinGroupFromString(it))
+                it.startsWith("N G") -> mmsFile.spinGroups.add(spinGroupFromString(it, index=mmsFile.spinGroups.size))
                 it.startsWith("N C") -> mmsFile.couplingGroups.add(couplingGroupFromString(it))
                 it.startsWith("A") -> mmsFile.atoms.add(atomFromString(it))
                 it.startsWith("B") -> mmsFile.bonds.add(bondFromString(it))
