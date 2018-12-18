@@ -38,9 +38,9 @@ data class FField(
 
 data class SField(
     val type: Int,
-    val pH: Float,
-    val ionic_strength: Float,
-    val concentration: Float
+    val pH: Double,
+    val ionic_strength: Double,
+    val concentration: Double
 )
 
 data class IField(
@@ -58,7 +58,7 @@ data class TField(
 data class IACPField(
     val atom_number: Int,
     val atomic_number: Int,
-    val coupling_data: List<Float> // Doesn't seem useful, it is redundant with data later in the file
+    val coupling_data: List<Double> // Doesn't seem useful, it is redundant with data later in the file
 )
 
 data class AtomNameField(
@@ -78,19 +78,19 @@ fun atomNameFromString(line: String): AtomNameField{
 
 data class MagneticGroup(
     val atom_number: Int,
-    val predictedShift: Float?,
-    val predictedRange: Float?
+    val predictedShift: Double?,
+    val predictedRange: Double?
 )
 
 data class SpinGroupField(
     val name: String,
-    val observedShift: Float?,
-    val predictedShift: Float?,
-    val lineWidth: Float,
+    val observedShift: Double?,
+    val predictedShift: Double?,
+    val lineWidth: Double,
     val decoupling: Int,
     val suppressed: Int,
-    val reliability: Float,
-    val range: Float,
+    val reliability: Double,
+    val range: Double,
     val rangeLock: Int,
     val groupWeight: Int,
     val numMagneticGroups: Int,
@@ -98,10 +98,10 @@ data class SpinGroupField(
     val index: Int
 )
 
-fun chemicalShiftCleaner(str: String): Float? {
+fun chemicalShiftCleaner(str: String): Double? {
     return when {
         str =="-1e+012" -> null
-        else -> str.toFloat()
+        else -> str.toDouble()
     }
 }
 
@@ -132,11 +132,11 @@ fun spinGroupFromString(line: String, index: Int): SpinGroupField {
         name = splitLine[2].removeSurrounding("|"),
         observedShift = chemicalShiftCleaner(splitLine[3]),
         predictedShift = chemicalShiftCleaner(splitLine[4]),
-        lineWidth = splitLine[5].toFloat(),
+        lineWidth = splitLine[5].toDouble(),
         decoupling = splitLine[6].toInt(),
         suppressed = splitLine[7].toInt(),
-        reliability = splitLine[8].toFloat(),
-        range = splitLine[9].toFloat(),
+        reliability = splitLine[8].toDouble(),
+        range = splitLine[9].toDouble(),
         rangeLock = splitLine[10].toInt(),
         groupWeight = splitLine[11].toInt(),
         numMagneticGroups = splitLine[12].toInt(),
@@ -153,8 +153,8 @@ data class CouplingGroupField(
     val mg2_index: Int,
     val group_id: Int,
     val bond_length: Int,
-    val observed_coupling: Float,
-    val predicted_coupling: Float,
+    val observed_coupling: Double,
+    val predicted_coupling: Double,
     val prediction_quality: Int
 )
 
@@ -168,15 +168,15 @@ fun couplingGroupFromString(line: String): CouplingGroupField {
         mg2_index = splitLine[6].toInt(),
         group_id = splitLine[7].toInt(),
         bond_length = splitLine[8].toInt(),
-        observed_coupling = splitLine[9].toFloat(),
-        predicted_coupling = splitLine[10].toFloat(),
+        observed_coupling = splitLine[9].toDouble(),
+        predicted_coupling = splitLine[10].toDouble(),
         prediction_quality = splitLine[11].toInt()
     )
 }
 
 data class AtomField(
     val atomic_number: Int,
-    val charge: Float,
+    val charge: Double,
     val formal_charge: Int,
     val t1: Int,
     val t2: Int,
@@ -187,16 +187,16 @@ data class AtomField(
     val u3: Int,
     val charge_lock: Int,
     val position_lock: Int,
-    val x: Float,
-    val y: Float,
-    val z: Float
+    val x: Double,
+    val y: Double,
+    val z: Double
 )
 
 fun atomFromString(line: String): AtomField {
     val splitLine = line.split(" ")
     return AtomField(
         atomic_number = splitLine[1].toInt(),
-        charge = splitLine[2].toFloat(),
+        charge = splitLine[2].toDouble(),
         formal_charge = splitLine[3].toInt(),
         t1 = splitLine[4].toInt(),
         t2 = splitLine[5].toInt(),
@@ -207,9 +207,9 @@ fun atomFromString(line: String): AtomField {
         u3 = splitLine[10].toInt(),
         charge_lock = splitLine[11].toInt(),
         position_lock = splitLine[12].toInt(),
-        x = splitLine[13].toFloat(),
-        y = splitLine[14].toFloat(),
-        z = splitLine[15].toFloat()
+        x = splitLine[13].toDouble(),
+        y = splitLine[14].toDouble(),
+        z = splitLine[15].toDouble()
     )
 }
 
@@ -248,7 +248,8 @@ data class MMSFile(
 )
 
 
-fun parseMMS(inputStream: FileInputStream, mmsFile: MMSFile) {
+fun parseMMS(inputStream: FileInputStream): MMSFile {
+    val mmsFile = MMSFile()
     inputStream.bufferedReader().useLines { lines ->
         lines.forEach {
             when {
@@ -261,4 +262,5 @@ fun parseMMS(inputStream: FileInputStream, mmsFile: MMSFile) {
             }
         }
     }
+    return mmsFile
 }
