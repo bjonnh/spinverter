@@ -3,7 +3,6 @@ package net.nprod.spinverter
 import mmsFileToMnova
 import mmsFileToMol2
 import net.nprod.spinverter.MMS.*
-import net.nprod.spinverter.PMS.PMSData
 import net.nprod.spinverter.PMS.parsePMS
 import pmsFileToMnova
 import java.io.File

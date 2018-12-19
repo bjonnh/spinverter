@@ -149,28 +149,29 @@ fun mmsFileToMnova(mmsFile: MMSFile, fileName: String) {
                 population(1.0)
                 // Get the spin groups corresponding to that type of atom
                 mmsFile.spinGroups.filter { sg -> mmsFile.atomNames[sg.magneticGroups[0][0].atom_number].atomic_number == 1 }
-                    .mapIndexed { sgIndex, sg ->
+                    .map { sg ->
                         // We have X*Y where X is magnetically equivalent Y chemically equivalent
-                        sg.magneticGroups[0].forEachIndexed { index, mgg ->
-                                group(
-                                    name = "H" + sg.index + "000" + index.toString(), spinByTwo = 1,
-                                    lineWidth = sg.lineWidth, number = sg.numMagneticGroups * sg.magneticGroups[0].size
-                                ) {
-                                    shift(sg.observedShift ?: sg.predictedShift ?: 0.0)
-                                    qConst(0.0)
-                                    mmsFile.couplingGroups.filter { it.type == 1 }.map { cg -> // We only manage direct bonds here
-                                        when {
-                                            (cg.mg1 == sg.index) ->
-                                                mmsFile.spinGroups.find { it.index == cg.mg2 }?.let {
-                                                    jCoupling("H" + cg.mg2 + "000"+ cg.mg2_index, cg.observed_coupling)
-                                                }
-                                            (cg.mg2 == sg.index) ->
-                                                mmsFile.spinGroups.find { it.index == cg.mg1 }?.let {
-                                                    jCoupling("H" + cg.mg1 + "000" + cg.mg1_index, cg.observed_coupling)
-                                                }
-                                            else -> null
-                                        }
+                        sg.magneticGroups[0].forEachIndexed { index, _ ->
+                            group(
+                                name = "H" + sg.index + "-" + index.toString(), spinByTwo = 1,
+                                lineWidth = sg.lineWidth, number = sg.numMagneticGroups * sg.magneticGroups[0].size
+                            ) {
+                                shift(sg.observedShift ?: sg.predictedShift ?: 0.0)
+                                qConst(0.0)
+                                mmsFile.couplingGroups.filter { it.type == 1 }.map { cg ->
+                                    // We only manage direct bonds here
+                                    when {
+                                        (cg.mg1 == sg.index) ->
+                                            mmsFile.spinGroups.find { it.index == cg.mg2 }?.let {
+                                                jCoupling("H" + cg.mg2 + "-" + cg.mg2_index, cg.observed_coupling)
+                                            }
+                                        (cg.mg2 == sg.index) ->
+                                            mmsFile.spinGroups.find { it.index == cg.mg1 }?.let {
+                                                jCoupling("H" + cg.mg1 + "-" + cg.mg1_index, cg.observed_coupling)
+                                            }
+                                        else -> null
                                     }
+                                }
 
                             }
                         }
@@ -208,7 +209,7 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
                 pmsFile.spinGroups.filter { it.species == "1H" }.map { sg ->
 
                     sg.spins.map { s ->
-                        (1..(s.magneticEquivalence?:1)).map {magneticEquivalent ->
+                        (1..(s.magneticEquivalence ?: 1)).map { magneticEquivalent ->
                             val newName = (s.name + "-" + magneticEquivalent)
                             group(
                                 name = newName,
@@ -219,59 +220,95 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
 
                                 shift(s.chemicalShift ?: s.predictedShift ?: 0.0)
                                 qConst(0.0)
-                                val cpls = pmsFile.couplings.filter { (it.sg1 == s.name) }
+                                val cpls = pmsFile.couplings.filter { (it.sg1 == s.name) || (it.sg2 == s.name) }
+
+
+                                // Grab all couplings that are with the magnetic equivalent
+                                println(newName)
+                                data class Couple(
+                                    val name: String,
+                                    val group: Int,
+                                    val constant: Double
+                                )
+
+                                val coupleList: MutableList<Couple> = mutableListOf()
+
                                 cpls.map { c ->
+                                    when {
+                                        (c.sg1 == c.sg2) -> {
+                                            jCoupling(
+                                                s.name + "-" + (3 - magneticEquivalent),
+                                                c.constant
+                                            )
+                                            null
+                                        }
+                                        else -> {
+                                            val other = when {
+                                                (c.sg1 == s.name) -> c.sg2
+                                                else -> c.sg1
+                                            }
+                                            // Select the coupling partners that are ME=1
+                                            sg.spins.filter { it.name == other && it.magneticEquivalence == 1 }.map {
+                                                jCoupling(it.name + "-1", c.constant)
+                                            }
 
-                                    val other = when {
-                                        (c.sg1 == s.name) -> c.sg2
-                                        (c.sg2 == s.name) -> c.sg1
-                                        else -> "UNK"
+                                            // If we are ME=1 ourselve
+                                            if (s.magneticEquivalence == 1) {
+                                                sg.spins.filter { it.name == other }.map { sp2 ->
+                                                    (1..(sp2.magneticEquivalence ?: 1)).map {
+                                                        jCoupling(sp2.name + "-$it", c.constant)
+                                                    }
+                                                }
+                                            } else {
+                                                sg.spins.filter { it.name == other && it.magneticEquivalence == 2 }
+                                                    .map { sp2 ->
+                                                        (1..(sp2.magneticEquivalence ?: 1)).map {
+                                                            coupleList.add(Couple(sp2.name ?: "", it, c.constant))
+                                                        }
+                                                    }
+                                            }
+                                        }
                                     }
+                                }
 
-                                    // We have to handle the cases of multiple magnetically equivalent nuclei
-                                    val cplList = sg.spins.filter { it.name == other }.map {
-                                        println(it.name)
+                                coupleList.groupBy { it.name + "-" + it.group }.map { couple ->
+                                    // We sort the list by descending order of coupling constants
+                                    val sortedList = couple.value.sortedBy { it.constant }.reversed()
+                                    if (sortedList.size == 1) {
+                                        jCoupling(
+                                            "${sortedList[0].name}-${sortedList[0].group}",
+                                            sortedList[0].constant
+                                        )
+                                    } else {
+                                        // This part is a bit complex
+                                        // We take the first value of the group if ME=1
+                                        // But we take the second value of the group if ME=2
+                                        // This is assuming that the constants are sorted by decreasing order
+                                        // Which is done in the beginning of the groupby
+
+                                        val idx = if (magneticEquivalent == 1) {
+                                            sortedList[0].group - 1
+                                        } else {
+                                            2 - sortedList[0].group
+                                        }
+
+                                        jCoupling(
+                                            "${sortedList[idx].name}-${sortedList[idx].group}",
+                                            sortedList[idx].constant
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
-                // Get the spin groups corresponding to that type of atom
-                 /*mmsFile.spinGroups.filter { sg -> mmsFile.atomNames[sg.magneticGroups[0][0].atom_number].atomic_number == 1 }
-                    .mapIndexed { sg_index, sg ->
-                        // We have X*Y where X is magnetically equivalent Y chemically equivalent
-                        sg.magneticGroups[0].forEachIndexed { index, mgg ->
-                            group(
-                                name = "H" + sg.index + "000" + index.toString(), spinByTwo = "1",
-                                lineWidth = sg.lineWidth, number = sg.numMagneticGroups * sg.magneticGroups[0].size
-                            ) {
-                                shift(sg.observedShift ?: sg.predictedShift ?: 0.0f)
-                                qConst(0f)
-                                mmsFile.couplingGroups.filter { it.type == 1 }.map { cg -> // We only manage direct bonds here
-                                    when {
-                                        (cg.mg1 == sg.index) ->
-                                            mmsFile.spinGroups.find { it.index == cg.mg2 }?.let {
-                                                jCoupling("H" + cg.mg2 + "000"+ cg.mg2_index, cg.observed_coupling)
-                                            }
-                                        (cg.mg2 == sg.index) ->
-                                            mmsFile.spinGroups.find { it.index == cg.mg1 }?.let {
-                                                jCoupling("H" + cg.mg1 + "000" + cg.mg1_index, cg.observed_coupling)
-                                            }
-                                        else -> null
-                                    }
-                                }
 
-                            }
-                        }
-
-                    }*/
             }
             spectrum {
-                frequency(pmsFile.frequency?.toDouble() ?: 400.0)
+                frequency(pmsFile.frequency ?: 400.0)
                 points(65536)
-                from_ppm(pmsFile.rightPPM?.toDouble() ?: 0.0)
-                to_ppm(pmsFile.leftPPM?.toDouble() ?: 20.0)
+                from_ppm(pmsFile.rightPPM ?: 0.0)
+                to_ppm(pmsFile.leftPPM ?: 20.0)
             }
 
         }
