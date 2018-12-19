@@ -202,11 +202,11 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
     val writer = f.createXMLStreamWriter(sw)
     writer.document {
         mnovaspinsim {
-            spinsystem {
-                summary { }
-                population(1.0)
 
                 pmsFile.spinGroups.filter { it.species == "1H" }.map { sg ->
+                    spinsystem {
+                        summary { }
+                        population(sg.population?:1.0)
 
                     sg.spins.map { s ->
                         (1..(s.magneticEquivalence ?: 1)).map { magneticEquivalent ->
@@ -255,8 +255,10 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
                                             // If we are ME=1 ourselve
                                             if (s.magneticEquivalence == 1) {
                                                 sg.spins.filter { it.name == other }.map { sp2 ->
-                                                    (1..(sp2.magneticEquivalence ?: 1)).map {
-                                                        jCoupling(sp2.name + "-$it", c.constant)
+                                                    if (sp2.magneticEquivalence == 2) {
+                                                        (1..(sp2.magneticEquivalence ?: 1)).map {
+                                                            jCoupling(sp2.name + "-$it", c.constant)
+                                                        }
                                                     }
                                                 }
                                             } else {
@@ -275,6 +277,7 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
                                     // We sort the list by descending order of coupling constants
                                     val sortedList = couple.value.sortedBy { it.constant }.reversed()
                                     if (sortedList.size == 1) {
+                                        println(" Coupling T3A with ${sortedList[0].name}-${sortedList[0].group} ${sortedList[0].constant}")
                                         jCoupling(
                                             "${sortedList[0].name}-${sortedList[0].group}",
                                             sortedList[0].constant
@@ -291,7 +294,7 @@ fun pmsFileToMnova(pmsFile: PMSData, fileName: String) {
                                         } else {
                                             2 - sortedList[0].group
                                         }
-
+                                        println(" Coupling T3B with ${sortedList[idx].name}-${sortedList[idx].group} ${sortedList[idx].constant}")
                                         jCoupling(
                                             "${sortedList[idx].name}-${sortedList[idx].group}",
                                             sortedList[idx].constant
