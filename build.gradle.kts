@@ -12,7 +12,7 @@ apply {
 }
 
 group = "net.nprod"
-version = "0.1-SNAPSHOT"
+version = "0.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -20,7 +20,7 @@ repositories {
 
 application {
     group = "net.nprod.spinverter"
-    version = "0.1-SNAPSHOT"
+    version = "0.2-SNAPSHOT"
     applicationName = "spinverter"
     mainClassName = "net.nprod.spinverter.Main"
 }

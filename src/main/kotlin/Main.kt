@@ -51,16 +51,25 @@ class PMSController : Controller() {
         runLater { status?.set("Loading file...") }
         try {
             pmsData = parsePMS(file.inputStream())
-            runLater { status?.set("Successfully loaded...") }
-            update.set(true)
+            runLater { status?.set("Successfully loaded ${file.name}...") }
+            update.set(!update.get())
             loaded.set(true)
         } catch (e: Exception) {
-            runLater { status?.set("Failed loading file...") }
+            runLater {
+                status?.set("Failed loading file...")
+                e.stackTrace.map { println(it) }
+            }
         }
     }
 
     fun saveToMnova(file: File) {
-        pmsFileToMnova(pmsData, file)
+        try {
+            pmsFileToMnova(pmsData, file)
+            runLater { status?.set("Successfully exported ${file.name}...")}
+        } catch (e: Exception) {
+            status?.set("Failed exporting file...")
+            e.stackTrace.map { println(it) }
+        }
     }
 }
 
@@ -154,6 +163,7 @@ class MainView : View() {
                         text = "Load PMS File"
                         action {
                             val fileChooser = FileChooser()
+                            fileChooser.title = "Select the PMS file to open"
                             fileChooser.extensionFilters.addAll(
                                 FileChooser.ExtensionFilter("PMS Files", "*.pms")
                             )
@@ -183,9 +193,9 @@ class MainView : View() {
                 }
                 statsView = StatsView()
                 pmsController.update.onChange {
-                    statsView.spinGroups.removeAll()
+                    statsView.spinGroups.clear()
                     statsView.spinGroups.addAll(pmsController.pmsData.spinGroups)
-                    statsView.couplings.removeAll()
+                    statsView.couplings.clear()
                     statsView.couplings.addAll(pmsController.pmsData.couplings)
                 }
                 add(statsView)

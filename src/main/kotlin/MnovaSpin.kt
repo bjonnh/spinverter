@@ -242,7 +242,7 @@ fun pmsFileToMnova(pmsFile: PMSData, file: File) {
 
 
                                 // Grab all couplings that are with the magnetic equivalent
-                                println(newName)
+
                                 data class Couple(
                                     val name: String,
                                     val group: Int,
