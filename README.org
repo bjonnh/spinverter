@@ -1,18 +1,28 @@
 * The project
+Spinverter is a simple tool to convert PMS (PERCH) spin systems definitions to Mnova Spinsim XML files.
+
+It is made in [[https://www.kotlinlang.org][Kotlin]] using [[https://tornadofx.io/][TornadoFX]]. It should run on any machine able to run
+Java. Currently only Java 8 is supported due to limitation (being worked on) of TornadoFX.
 
 #+begin_center
 [[/images/spinverter.gif]]
 #+end_center
 
-* Running for development
-Using Java 8
-#+BEGIN_SRC: shell
-gradle run
-#+END_SRC
-* Building the distributions
-** Zip and Tar
-#+BEGIN_SRC: shell
-gradle assembleDist
-#+END_SRC
+** End users
+   Go to the [[https://github.com/bjonnh/spinverter/releases][releases]] pages and download the last version. Unzip it somewhere
+   then run the spinverter.bat (on Windows) or spinverter script (on Linux,
+   Mac/OS and others).
+** Developers
+   You may need to have a working  [[https://gluonhq.com/products/javafx/][JavaFX]] installed.
+*** Running for development
+  Using Java 8
+  #+BEGIN_SRC: shell
+  gradle run
+  #+END_SRC
+*** Building the distributions
+**** Zip and Tar
+  #+BEGIN_SRC: shell
+  gradle assembleDist
+  #+END_SRC
 
-The builds will then be in build/distributions
+  The builds will then be in build/distributions
