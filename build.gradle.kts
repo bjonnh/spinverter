@@ -4,6 +4,11 @@ plugins {
     java
     kotlin("jvm") version "1.3.11"
     id("no.tornado.fxlauncher") version "1.0.20"
+    application
+}
+
+apply {
+    plugin("distribution")
 }
 
 group = "net.nprod"
@@ -12,6 +17,15 @@ version = "0.1-SNAPSHOT"
 repositories {
     mavenCentral()
 }
+
+application {
+    group = "net.nprod.spinverter"
+    version = "0.1-SNAPSHOT"
+    applicationName = "spinverter"
+    mainClassName = "net.nprod.spinverter.Main"
+}
+
+
 
 dependencies {
     compile(kotlin("stdlib-jdk8"))
@@ -29,7 +43,7 @@ dependencies {
 fxlauncher {
     applicationVendor = "Jonathan Bisson"
     applicationUrl = "https://github.com/bjonnh/spinverter"
-    applicationMainClass = "net.nprod.spinverter.MainKt"
+    applicationMainClass = "net.nprod.spinverter.Main"
     acceptDowngrade = false
     deployTarget = "$buildDir"
 }

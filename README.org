@@ -1,0 +1,18 @@
+* The project
+
+#+begin_center
+[[/images/spinverter.gif]]
+#+end_center
+
+* Running for development
+Using Java 8
+#+BEGIN_SRC: shell
+gradle run
+#+END_SRC
+* Building the distributions
+** Zip and Tar
+#+BEGIN_SRC: shell
+gradle assembleDist
+#+END_SRC
+
+The builds will then be in build/distributions
