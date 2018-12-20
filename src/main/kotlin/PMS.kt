@@ -196,7 +196,7 @@ fun parsePMS(file: FileInputStream): PMSData {
             it.startsWith("CONTROL PARAMETERS:") -> mode = BlockType.ControlParameter
 
             mode == BlockType.Spin -> when {
-                it.isEmpty() -> {
+                it.isBlank() -> {
                     mode = null
                     data.finishSpinGroup()
                 }
