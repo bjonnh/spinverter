@@ -28,6 +28,7 @@ class PMSSpinGroup {
     var populationLocked: Boolean? = null
     var population: Double? = null
     var spins: MutableList<PMSSpin> = mutableListOf()
+    val numSpins: Int get() = this.spins.size
 
     fun addSpinFromText(str: String) {
         val spin = PMSSpin()
@@ -63,7 +64,7 @@ enum class CouplingType {
     J, D
 }
 
-data class PMSCoupling(
+class PMSCoupling(
     val name: String,
     val constant: Double,
     val type: CouplingType,
@@ -72,7 +73,7 @@ data class PMSCoupling(
     val locked: Boolean = false,
     val predicted: Double? = null,
     val range: Double? = null
-)
+) {}
 
 class PMSData {
     private var activeSpecies: String = ""
