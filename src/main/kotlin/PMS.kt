@@ -208,7 +208,7 @@ fun parsePMS(file: FileInputStream): PMSData {
             }
 
             mode == BlockType.Coupling -> when {
-                it.isEmpty() -> {
+                it.isBlank() -> {
                     mode = null
                 }
                 else -> data.newCouplingFromText(it)
